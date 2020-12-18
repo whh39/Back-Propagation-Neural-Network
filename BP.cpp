@@ -9,9 +9,8 @@
 
 #include "BP.h"
 
-/*	任何一个闭区间内的连续函数都可以由一个含有隐含层的BP网络逼近，
-	也称“万能逼近定理”；
-	隐含层的节点数目h=sqrt（输入层节点数+输出层节点数）+ a，const a=1~10 */
+
+/*	隐含层的节点数目h=sqrt（输入层节点数+输出层节点数）+ a，const a=1~10 */
 
 using namespace std;
 
@@ -114,7 +113,7 @@ void BP::GetNums()
 {
 	in_num = data[0].x.size();		//获取输入层节点数
 	ou_num = data[0].y.size();		//获取输出层节点数
-	hd_num = (int)sqrt((in_num + ou_num) * 1.0) + 7;	//获取隐含层节点数
+	hd_num = (int)sqrt((in_num + ou_num) * 1.0) + 6;	//获取隐含层节点数
 	if (hd_num > NUM) hd_num = NUM;
 }
 
@@ -188,7 +187,10 @@ void BP::CalcDelta(int cnt)
 {
 	//计算输出层的delta值
 	for (int i = 0; i < ou_num; i++)
+	{
 		d[2][i] = (x[2][i] - data.at(cnt).y[i]) * x[2][i] * (A - x[2][i]) / (A * B);
+		dsum1 += d[2][i] * d[2][i];	//自适应
+	}
 	//计算隐含层的delta值
 	for (int i = 0; i < hd_num; i++)
 	{
@@ -196,29 +198,44 @@ void BP::CalcDelta(int cnt)
 		for (int j = 0; j < ou_num; j++)
 			t += w[2][i][j] * d[2][j];
 		d[1][i] = t * x[1][i] * (A - x[1][i]) / (A * B);
+		dsum2 += d[1][i] * d[1][i];	//自适应
 	}
 }
 
 //根据调整量调整BP网络
 void BP::UpdateNetWork()
 {
+	
 	//隐含层和输出层之间权值和阀值调整
 	for (int i = 0; i < hd_num; i++)
 	{
 		for (int j = 0; j < ou_num; j++)
-			w[2][i][j] -= ETA_W * d[2][j] * x[1][i];
+		{
+			//w[2][i][j] -= ETA_W * d[2][j] * x[1][i];	//普通
+			/*wp[2][i][j] = w[2][i][j];
+			w[2][i][j] -= ETA_W * d[2][j] * x[1][i] + ALPHA * wp[2][i][j];	//附加动量项*/
+			w[2][i][j] -= ETA_W * d[2][j] * x[1][i] / sqrt(E + dsum1);	//自适应学习率
+				
+		}
 	}
 	for (int i = 0; i < ou_num; i++)
-		b[2][i] -= ETA_B * d[2][i];
+		b[2][i] -= ETA_B * d[2][i];					
 
 	//输入层和隐含层之间的权值和阀值调整
 	for (int i = 0; i < in_num; i++)
 	{
 		for (int j = 0; j < hd_num; j++)
-			w[1][i][j] -= ETA_W * d[1][j] * x[0][i];
+		{
+			//w[1][i][j] -= ETA_W * d[1][j] * x[0][i];	//普通
+			/*wp[1][i][j] = w[1][i][j];
+			w[1][i][j] -= ETA_W * d[1][j] * x[0][i] + ALPHA * wp[2][i][j];	//附加动量项*/
+			w[1][i][j] -= ETA_W * d[1][j] * x[0][i] / sqrt(E + dsum2);	//自适应学习率
+			
+		}
+
 	}
 	for (int i = 0; i < hd_num; i++)
-		b[1][i] -= ETA_B * d[1][i];
+		b[1][i] -= ETA_B * d[1][i];					
 }
 
 //计算Sigmoid函数的值

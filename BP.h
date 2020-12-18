@@ -12,10 +12,12 @@
 #define A		1.0
 #define B		1.0    //A和B是S型函数的参数
 #define ITERS	1000	//最大训练次数
-#define ETA_W	0.00035	//权值调整率
-#define ETA_B	0.0002	//阀值调整率
-#define ERROR	0.0006	//单个样本允许的误差
-#define ACCU	0.0001	//每次迭代允许的误差
+#define ETA_W	0.0035	//权值调整率
+#define ETA_B	0.002	//阀值调整率
+#define ERROR	0.0005	//单个样本允许的误差
+#define ACCU	0.00002	//每次迭代允许的误差
+#define ALPHA   0.3		//动量项
+#define E		1		//自适应学习率
 
 #define Type double
 #define Vector std::vector
@@ -56,10 +58,13 @@ private:
 	int in_num;		//输入层节点数
 	int ou_num;		//输出层节点数
 	int hd_num;		//隐含层节点数
+	double dsum1 = 0;	//学习速率的叠加
+	double dsum2 = 0;	//学习速率的叠加
 
 	Vector<Data> data;		//输入输出数据
 
 	Type w[LAYER][NUM][NUM];	//BP网络的权值
+	Type wp[LAYER][NUM][NUM];	//BP网络的动量项
 	Type b[LAYER][NUM];			//BP网络节点的阀值
 
 	Type x[LAYER][NUM];			//每个神经元的值经S型好书转化后的输出值，输入层就为原值
